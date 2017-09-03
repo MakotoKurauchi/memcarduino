@@ -27,11 +27,21 @@
 //0xFF - BadSector
 
 //Define pins
-#define DataPin 12         //Data
-#define CmdPin 11          //Command
-#define AttPin 10          //Attention (Select)
-#define ClockPin 13        //Clock
-#define AckPin 2           //Acknowledge
+#if defined(__AVR_ATmega32U4__)
+  #define DataPin 14         //Data
+  #define CmdPin 16          //Command
+  #define AttPin 10          //Attention (Select)
+  #define ClockPin 15        //Clock
+  #define AckPin 2           //Acknowledge
+#else
+  #define DataPin 12         //Data
+  #define CmdPin 11          //Command
+  #define AttPin 10          //Attention (Select)
+  #define ClockPin 13        //Clock
+  #define AckPin 2           //Acknowledge
+#endif
+
+
 
 byte ReadByte = 0;
 volatile int state = HIGH;
@@ -60,7 +70,7 @@ void PinSetup()
   digitalWrite(AckPin, HIGH);    //Activate pullup resistor
 
   //Set up interrupt on pin 2 (INT.0) for Acknowledge signal
-  attachInterrupt(0, ACK, FALLING);
+  attachInterrupt(digitalPinToInterrupt(AckPin), ACK, FALLING);
 }
 
 //Acknowledge routine
@@ -103,7 +113,12 @@ void ReadFrame(unsigned int Address)
   CompatibleMode = false;
 
   //Activate device
-  PORTB &= 0xFB;    //Set pin 10 (AttPin, LOW)
+  digitalWrite(AttPin, LOW);
+#if defined(__AVR_ATmega32U4__)
+//  PORTB &= 0xBF;    //Set pin 10 (AttPin, LOW)
+#else
+//  PORTB &= 0xFB;    //Set pin 10 (AttPin, LOW)
+#endif
 
   SendCommand(0x81, 500);      //Access Memory Card
   SendCommand(0x52, 500);      //Send read command
@@ -126,7 +141,12 @@ void ReadFrame(unsigned int Address)
   Serial.write(SendCommand(0x00, 500));      //Memory Card status byte
 
   //Deactivate device
-  PORTB |= 4;    //Set pin 10 (AttPin, HIGH)
+  digitalWrite(AttPin, HIGH);
+#if defined(__AVR_ATmega32U4__)
+//  PORTB |= 40;    //Set pin 10 (AttPin, HIGH)
+#else
+//  PORTB |= 4;    //Set pin 10 (AttPin, HIGH)
+#endif
 }
 
 //Write a frame from the serial port to the Memory Card
@@ -141,7 +161,12 @@ void WriteFrame(unsigned int Address)
   CompatibleMode = false;
 
   //Activate device
-  PORTB &= 0xFB;    //Set pin 10 (AttPin, LOW)
+  digitalWrite(AttPin, LOW);
+  #if defined(__AVR_ATmega32U4__)
+ //   PORTB &= 0xBF;    //Set pin 10 (AttPin, LOW)
+  #else
+ //   PORTB &= 0xFB;    //Set pin 10 (AttPin, LOW)
+  #endif
 
   SendCommand(0x81, 300);      //Access Memory Card
   SendCommand(0x57, 300);      //Send write command
@@ -175,7 +200,12 @@ void WriteFrame(unsigned int Address)
   Serial.write(SendCommand(0x00, 200)); //Memory Card status byte
 
   //Deactivate device
-  PORTB |= 4;    //Set pin 10 (AttPin, HIGH)
+  digitalWrite(AttPin, HIGH);
+  #if defined(__AVR_ATmega32U4__)
+//    PORTB |= 40;    //Set pin 10 (AttPin, HIGH)
+  #else
+//    PORTB |= 4;    //Set pin 10 (AttPin, HIGH)
+  #endif
 }
 
 void setup()
